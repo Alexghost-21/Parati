@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keykey ✨ My Yellow Universe</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
+        
+        #canvas-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+        }
+
+        /* REPRODUCTOR SUPERIOR */
+        .audio-player {
+            position: absolute;
+            top: 20px;
+            left: 5%;
+            width: 90%;
+            max-width: 500px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ffd700;
+            border-radius: 30px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            z-index: 10;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        }
+        .play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #ffd700;
+            background: transparent;
+            color: #ffd700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        .progress-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            color: #fff;
+            font-size: 0.8rem;
+        }
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #444;
+            border-radius: 2px;
+            outline: none;
+            margin-bottom: 5px;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+        }
+        .time-info {
+            display: flex;
+            justify-content: space-between;
+            opacity: 0.7;
+        }
+
+        /* TEXTOS FLOTANTES PEGADOS A LA GALAXIA */
+        .galaxy-text {
+            position: absolute;
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 5;
+            transform: translate(-50%, -50%);
+            text-shadow: 0 0 10px #ffd700, 0 0 20px #000;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 3px 8px;
+            border-radius: 5px;
+        }
+
+        /* PANTALLA INICIAL */
+        .welcome-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #05050a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 1s ease;
+        }
+        .btn-start {
+            padding: 18px 40px;
+            font-size: 1.2rem;
+            background: #ffd700;
+            color: #000;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div class="welcome-screen" id="welcome">
+        <button class="btn-start" onclick="initAll()">Entrar a tu Galaxia ✨</button>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div class="audio-player">
+        <button class="play-btn" id="play-trigger" onclick="toggleAudio()">▶</button>
+        <div class="progress-container">
+            <input type="range" class="slider" id="progress-bar" value="0" min="0" max="100">
+            <div class="time-info">
+                <span id="current-time">0:00</span>
+                <span id="total-time">2:43</span>
+            </div>
+        </div>
+    </div>
+
+    <audio id="bg-music" loop preload="auto">
+        <source src="https://dl.dropboxusercontent.com/sraw/8q9xqg7z9k3w5a2/GFRIEND-Loveable.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const audio = document.getElementById('bg-music');
+        const playBtn = document.getElementById('play-trigger');
+        const progressBar = document.getElementById('progress-bar');
+        
+        const frases = [
+            "Keykey 💛", "Mi paz eterna ✨", "Mi única certeza ☀️", 
+            "Destino inolvidable 🪐", "El eco de mi ser 🎵", "Dueña de mis instantes 💭",
+            "Mi coincidencia perfecta 🧩", "Luz inagotable 🌟", "Amor de mi vida 👑",
+            "Te amo hoy y siempre 🥹", "Tú eres mi todo", "Mi universo entero"
+        ];
+
+        let scene, camera, renderer, particleSystem;
+        let textElements = [];
+
+        function initAll() {
+            document.getElementById('welcome').style.opacity = '0';
+            setTimeout(() => document.getElementById('welcome').style.display = 'none', 1000);
+            
+            audio.play().then(() => {
+                playBtn.innerText = "❚❚";
+            }).catch(e => {
+                console.log("Error al reproducir audio:", e);
+            });
+
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 3.2; 
+            camera.position.y = 1.8;
+            camera.lookAt(0,0,0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            // GALAXIA DE PARTICULAS AMARILLAS 3D
+            const particleCount = 20000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            const colorCore = new THREE.Color('#ffffff');
+            const colorArm = new THREE.Color('#ffd700');
+            const colorEdge = new THREE.Color('#ff9900');
+
+            for (let i = 0; i < particleCount; i++) {
+                const r = Math.pow(Math.random(), 2.5) * 3.0; 
+                const arms = 2;
+                const theta = (i % arms) * ((2 * Math.PI) / arms) + r * 1.8 + (Math.random() - 0.5) * 0.25;
+
+                const x = Math.cos(theta) * r;
+                const z = Math.sin(theta) * r;
+                const y = (Math.random() - 0.5) * 0.25 * (3.0 - r); 
+
+                positions[i * 3] = x;
+                positions[i * 3 + 1] = y;
+                positions[i * 3 + 2] = z;
+
+                let mixedColor;
+                if(r < 0.5) {
+                    mixedColor = colorCore.clone().lerp(colorArm, r / 0.5);
+                } else {
+                    mixedColor = colorArm.clone().lerp(colorEdge, (r - 0.5) / 2.5);
+                }
+
+                colors[i * 3] = mixedColor.r;
+                colors[i * 3 + 1] = mixedColor.g;
+                colors[i * 3 + 2] = mixedColor.b;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.018,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+
+            particleSystem = new THREE.Points(geometry, material);
+            scene.add(particleSystem);
+
+            // PALABRAS CERCA DEL NÚCLEO
+            frases.forEach((text, index) => {
+                const div = document.createElement('div');
+                div.className = 'galaxy-text';
+                div.innerText = text;
+                document.body.appendChild(div);
+
+                const angle = (index / frases.length) * Math.PI * 2;
+                const radius = 0.5 + Math.random() * 0.7; 
+                textElements.push({
+                    element: div,
+                    pos: new THREE.Vector3(Math.cos(angle) * radius, (Math.random() - 0.5) * 0.2, Math.sin(angle) * radius),
+                    angle: angle,
+                    radius: radius
+                });
+            });
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (particleSystem) particleSystem.rotation.y += 0.0015;
+
+            textElements.forEach(item => {
+                item.angle += 0.0015; 
+                item.pos.x = Math.cos(item.angle) * item.radius;
+                item.pos.z = Math.sin(item.angle) * item.radius;
+
+                const wp = item.pos.clone();
+                wp.project(camera);
+
+                const x = (wp.x * .5 + .5) * window.innerWidth;
+                const y = (-(wp.y * .5) + .5) * window.innerHeight;
+
+                if(wp.z > 1) {
+                    item.element.style.display = 'none';
+                } else {
+                    item.element.style.display = 'block';
+                    item.element.style.left = `${x}px`;
+                    item.element.style.top = `${y}px`;
+                }
+            });
+
+            renderer.render(scene, camera);
+            updatePlayer();
+        }
+
+        function toggleAudio() {
+            if (audio.paused) {
+                audio.play();
+                playBtn.innerText = "❚❚";
+            } else {
+                audio.pause();
+                playBtn.innerText = "▶";
+            }
+        }
+
+        function updatePlayer() {
+            if (!audio.duration) return;
+            const percentage = (audio.currentTime / audio.duration) * 100;
+            progressBar.value = percentage;
+
+            let curMins = Math.floor(audio.currentTime / 60);
+            let curSecs = Math.floor(audio.currentTime % 60);
+            let durMins = Math.floor(audio.duration / 60);
+            let durSecs = Math.floor(audio.duration % 60);
+
+            if (curSecs < 10) curSecs = "0" + curSecs;
+            if (durSecs < 10) durSecs = "0" + durSecs;
+
+            document.getElementById('current-time').innerText = `${curMins}:${curSecs}`;
+            document.getElementById('total-time').innerText = `${durMins}:${durSecs}`;
+        }
+
+        window.addEventListener('resize', () => {
+            if(!camera || !renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
