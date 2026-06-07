@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keykey ✨ My Yellow Universe</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
+        
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+
+        /* REPRODUCTOR */
+        .audio-player { position: absolute; top: 20px; left: 5%; width: 90%; max-width: 500px; background: rgba(0,0,0,0.7); border: 1px solid #ffd700; border-radius: 30px; padding: 10px 20px; display: flex; align-items: center; z-index: 10; }
+        .play-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #ffd700; background: transparent; color: #ffd700; cursor: pointer; margin-right: 15px; }
+
+        /* PANTALLA INICIAL (EL DESBLOQUEADOR) */
+        .welcome-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; justify-content: center; align-items: center; z-index: 100; transition: opacity 0.8s; }
+        .btn-start { padding: 20px 40px; font-size: 1.2rem; background: #ffd700; color: #000; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="welcome-screen" id="welcome">
+        <button class="btn-start" onclick="startExperience()">INICIAR GALAXIA ✨</button>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div class="audio-player">
+        <button class="play-btn" id="play-trigger" onclick="toggleAudio()">▶</button>
+        <span id="status" style="color:#ffd700; font-size: 0.8rem;">Loveable - GFRIEND</span>
+    </div>
+
+    <!-- AUDIO CON ENLACE MÁS ESTABLE -->
+    <audio id="bg-music" loop>
+        <source src="https://files.catbox.moe/5u6k2z.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const audio = document.getElementById('bg-music');
+        const playBtn = document.getElementById('play-trigger');
+
+        function startExperience() {
+            // Esto es lo que desbloquea el navegador
+            audio.play().then(() => {
+                document.getElementById('welcome').style.opacity = '0';
+                setTimeout(() => document.getElementById('welcome').style.display = 'none', 800);
+                playBtn.innerText = "❚❚";
+            }).catch(err => {
+                alert("Toca cualquier parte para activar la música.");
+                audio.play();
+            });
+        }
+
+        function toggleAudio() {
+            if (audio.paused) { audio.play(); playBtn.innerText = "❚❚"; }
+            else { audio.pause(); playBtn.innerText = "▶"; }
+        }
+
+        // Aquí iría tu lógica de Three.js igual a la anterior...
+    </script>
+</body>
+</html>
